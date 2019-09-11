@@ -1,17 +1,34 @@
 <template>
   <div class="container">
     <div>
-      <logo />
       <h1 class="title">
         Nuxt.js With Netlify/FaunaDB
       </h1>
+      <div v-for="(article, index) in articles" :key="index">
+        <h2>{{ article.title }}</h2>
+      </div>
+      <pre>{{ articles }}</pre>
     </div>
   </div>
 </template>
 
 <script>
+import { q } from '@/plugins/fdb-client'
+
+const getAllArticlesDataQuery = (articlesRef) => {
+  return articlesRef.map((ref) => q.Get(ref))
+}
+
 export default {
-  components: {}
+  components: {},
+  async asyncData({ fdbClient }) {
+    const { data } = await fdbClient.query(
+      q.Paginate(q.Match(q.Ref('indexes/all_articles')))
+    )
+    const Articles = await fdbClient.query(getAllArticlesDataQuery(data))
+
+    return { articles: Articles.map((article) => article.data) }
+  }
 }
 </script>
 
@@ -27,7 +44,6 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  text-align: center;
 }
 
 .title {
